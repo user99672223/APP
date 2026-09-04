@@ -1,0 +1,18 @@
+# Directories owned by other sessions / other repos
+/windows/
+/server/
+
+# Build output
+target/
+build/
+.dart_tool/
+
+# Generated on the CI runner (never committed)
+/ios/Generated/
+/ios/Frameworks/
+/ios/*.xcodeproj/
+/ios/DerivedData/
+
+# OS noise
+.DS_Store
+Thumbs.db

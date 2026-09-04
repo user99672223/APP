@@ -1,0 +1,4 @@
+# libopus (bundled in audiopus_sys) still declares cmake_minimum_required < 3.5,
+# which CMake 4 refuses without this override. Applies to every cargo build here and in CI.
+[env]
+CMAKE_POLICY_VERSION_MINIMUM = "3.5"

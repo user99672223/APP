@@ -1,0 +1,44 @@
+[package]
+name = "engine"
+description = "Shared engine: transport, media, chat, files, settings, stats"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[features]
+default = []
+# Real microphone/speaker in the loopback example (Windows/Linux/macOS hosts).
+cpal = ["dep:cpal"]
+# In-process stand-in for the server, used by tests and the loopback example.
+mock-server = []
+
+[dependencies]
+proto = { workspace = true, features = ["tokio"] }
+iroh = "1.1"
+n0-future = "0.3"
+tokio = { workspace = true }
+tokio-util = { version = "0.7", features = ["rt"] }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+serde = { workspace = true }
+postcard = { workspace = true }
+thiserror = { workspace = true }
+bytes = "1"
+parking_lot = "0.12"
+redb = "4"
+chacha20poly1305 = "0.11"
+ed25519-dalek = { version = "3", features = ["rand_core"] }
+x25519-dalek = { version = "3", features = ["static_secrets"] }
+hkdf = "0.13"
+sha2 = "0.11"
+blake3 = "1"
+rand = "0.10"
+audiopus = "0.3.0-rc.0"
+cpal = { version = "0.18", optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+
+[[example]]
+name = "loopback"
+required-features = ["mock-server"]

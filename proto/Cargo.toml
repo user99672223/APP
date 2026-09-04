@@ -1,0 +1,20 @@
+[package]
+name = "proto"
+description = "Wire types shared by the engine and the server (postcard-encoded, versioned)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[features]
+default = []
+# Async length-prefixed framing helpers over tokio AsyncRead/AsyncWrite.
+tokio = ["dep:tokio"]
+
+[dependencies]
+serde = { workspace = true }
+postcard = { workspace = true }
+thiserror = { workspace = true }
+tokio = { version = "1", features = ["io-util"], optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros", "io-util"] }

@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = ["proto", "engine", "engine-ffi", "uniffi-bindgen"]
+# /server and /windows are owned by other sessions and live outside this workspace.
+# The server crate depends on ../proto by path and has its own Cargo.lock.
+exclude = ["server", "windows"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.91"
+
+[workspace.dependencies]
+proto = { path = "proto" }
+engine = { path = "engine" }
+serde = { version = "1", features = ["derive"] }
+postcard = { version = "1", features = ["use-std"] }
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "io-util", "fs"] }
+tracing = "0.1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"

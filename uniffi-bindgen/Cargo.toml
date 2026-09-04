@@ -1,0 +1,10 @@
+[package]
+name = "uniffi-bindgen"
+description = "Runs UniFFI's bindings generator (see CLAUDE.md)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+uniffi = { version = "0.32", features = ["cli"] }

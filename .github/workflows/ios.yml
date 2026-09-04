@@ -1,0 +1,117 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  engine-tests:
+    name: Engine tests (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Native build tools for libopus
+        run: sudo apt-get update && sudo apt-get install -y cmake libasound2-dev
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: Test
+        run: cargo test --workspace --all-features
+
+  ios:
+    name: iOS engine xcframework + unsigned IPA
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios, aarch64-apple-ios-sim
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ios
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: Build engine for iOS (device)
+        run: cargo build -p engine-ffi --release --target aarch64-apple-ios
+
+      - name: Build engine for iOS (simulator)
+        run: cargo build -p engine-ffi --release --target aarch64-apple-ios-sim
+
+      - name: Generate Swift bindings
+        run: |
+          cargo run -p uniffi-bindgen -- generate \
+            --library target/aarch64-apple-ios/release/libengine_ffi.a \
+            --language swift --out-dir ios/Generated
+          ls -la ios/Generated
+
+      - name: Assemble xcframework
+        run: |
+          set -e
+          rm -rf ios/Headers ios/Frameworks
+          mkdir -p ios/Headers ios/Frameworks
+          cp ios/Generated/EngineFFI.h ios/Headers/
+          cp ios/Generated/EngineFFI.modulemap ios/Headers/module.modulemap
+          xcodebuild -create-xcframework \
+            -library target/aarch64-apple-ios/release/libengine_ffi.a -headers ios/Headers \
+            -library target/aarch64-apple-ios-sim/release/libengine_ffi.a -headers ios/Headers \
+            -output ios/Frameworks/EngineFFI.xcframework
+
+      - name: Stamp build info
+        run: |
+          COMMIT=$(git rev-parse --short HEAD)
+          DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
+          cat > ios/Sources/BuildInfo.swift <<SWIFT
+          enum BuildInfo {
+              static let commit = "$COMMIT"
+              static let date = "$DATE"
+          }
+          SWIFT
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Build (unsigned)
+        working-directory: ios
+        run: |
+          xcodebuild -project APP.xcodeproj -scheme APP -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package IPA
+        working-directory: ios/build/Build/Products/Release-iphoneos
+        run: |
+          rm -rf Payload && mkdir Payload
+          cp -R APP.app Payload/
+          zip -qr APP-unsigned.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: APP-unsigned-ipa
+          path: ios/build/Build/Products/Release-iphoneos/APP-unsigned.ipa
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swift-bindings
+          path: ios/Generated
+          retention-days: 7

@@ -1,0 +1,6 @@
+[bindings.swift]
+# Swift module of the generated file (Engine.swift) and the C module it imports.
+module_name = "Engine"
+ffi_module_name = "EngineFFI"
+generate_module_map = true
+omit_argument_labels = false
