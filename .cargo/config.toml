@@ -2,3 +2,4 @@
 # which CMake 4 refuses without this override. Applies to every cargo build here and in CI.
 [env]
 CMAKE_POLICY_VERSION_MINIMUM = "3.5"
+IPHONEOS_DEPLOYMENT_TARGET = "17.0"
